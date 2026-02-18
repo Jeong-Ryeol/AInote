@@ -43,7 +43,7 @@ export async function GET(
     return NextResponse.json({ isShared: false });
   }
 
-  const baseUrl = new URL(req.url).origin;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
   return NextResponse.json({
     isShared: sharedNote.isActive,
     token: sharedNote.token,
@@ -80,7 +80,7 @@ export async function POST(
     },
   });
 
-  const baseUrl = new URL(req.url).origin;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
   return NextResponse.json({
     token: sharedNote.token,
     isActive: sharedNote.isActive,
