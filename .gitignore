@@ -36,6 +36,9 @@ yarn-error.log*
 .env.production
 !.env.example
 
+# internal docs (서버 정보 포함)
+docs/PLAN.md
+
 # vercel
 .vercel
 
