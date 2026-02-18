@@ -1,0 +1,33 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3100:3000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      COLLAB_JWT_SECRET: ${COLLAB_JWT_SECRET}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      NEXT_PUBLIC_COLLAB_URL: ${NEXT_PUBLIC_COLLAB_URL}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  collab:
+    build:
+      context: ./collab-server
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3101:1234"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      COLLAB_JWT_SECRET: ${COLLAB_JWT_SECRET}
+      PORT: "1234"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
