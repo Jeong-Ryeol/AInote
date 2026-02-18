@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { SignJWT } from "jose";
 
-if (!process.env.COLLAB_JWT_SECRET) {
-  throw new Error("COLLAB_JWT_SECRET environment variable is required");
+function getJwtSecret() {
+  const secret = process.env.COLLAB_JWT_SECRET;
+  if (!secret) {
+    throw new Error("COLLAB_JWT_SECRET environment variable is required");
+  }
+  return new TextEncoder().encode(secret);
 }
-const JWT_SECRET = new TextEncoder().encode(process.env.COLLAB_JWT_SECRET);
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -21,7 +24,7 @@ export async function POST(req: Request) {
   })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("24h")
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 
   return NextResponse.json({ token });
 }
