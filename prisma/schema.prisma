@@ -26,6 +26,7 @@ model User {
   workspaceMembers  WorkspaceMember[]
   aiSettings        UserAISettings?
   aiConversations   AIConversation[]
+  invitesSent       WorkspaceInvite[] @relation("InvitesSent")
 }
 
 model Account {
@@ -90,6 +91,7 @@ model Workspace {
   members WorkspaceMember[]
   notes   Note[]
   tags    Tag[]
+  invites WorkspaceInvite[]
 }
 
 model WorkspaceMember {
@@ -127,6 +129,7 @@ model Note {
   tags            NoteTag[]
   embeddings      NoteEmbedding[]
   aiConversations AIConversation[]
+  sharedNote      SharedNote?
 
   @@index([workspaceId, parentId])
   @@index([workspaceId, isArchived])
@@ -199,4 +202,34 @@ model AIMessage {
   conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
+}
+
+// ─── Sharing ────────────────────────────────────────
+
+model SharedNote {
+  id        String    @id @default(cuid())
+  noteId    String    @unique
+  token     String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+}
+
+model WorkspaceInvite {
+  id          String   @id @default(cuid())
+  workspaceId String
+  email       String
+  role        String   @default("member")
+  token       String   @unique
+  invitedBy   String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviter   User      @relation("InvitesSent", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, email])
 }

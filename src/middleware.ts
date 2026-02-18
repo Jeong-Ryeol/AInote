@@ -7,5 +7,6 @@ export const config = {
     "/ai-chat/:path*",
     "/settings/:path*",
     "/trash/:path*",
+    "/invite/:path*",
   ],
 };

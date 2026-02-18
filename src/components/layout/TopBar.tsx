@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { useParams } from "next/navigation";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,11 +13,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Menu, MessageSquare, Settings, LogOut } from "lucide-react";
+import { Menu, MessageSquare, Settings, LogOut, Share2 } from "lucide-react";
+import { ShareDialog } from "@/components/sharing/ShareDialog";
 
 export function TopBar() {
   const { data: session } = useSession();
   const { isOpen, toggle } = useSidebarStore();
+  const params = useParams<{ workspaceId?: string; noteId?: string }>();
+  const [shareOpen, setShareOpen] = useState(false);
 
   const initials = session?.user?.name
     ? session.user.name
@@ -34,6 +39,25 @@ export function TopBar() {
       )}
 
       <div className="flex-1" />
+
+      {params?.noteId && params?.workspaceId && (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setShareOpen(true)}
+          >
+            <Share2 className="h-4 w-4" />
+          </Button>
+          <ShareDialog
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+            noteId={params.noteId}
+            workspaceId={params.workspaceId}
+          />
+        </>
+      )}
 
       <Button variant="ghost" size="icon" className="h-7 w-7">
         <MessageSquare className="h-4 w-4" />
