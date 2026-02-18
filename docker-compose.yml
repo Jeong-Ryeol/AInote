@@ -3,25 +3,31 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: https://wonryeol-ai-note.kro.kr
+        NEXT_PUBLIC_COLLAB_URL: wss://wonryeol-ai-note.kro.kr/collab
     ports:
       - "127.0.0.1:3100:3000"
     environment:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
       AUTH_SECRET: ${AUTH_SECRET}
-      AUTH_URL: ${AUTH_URL}
+      AUTH_URL: https://wonryeol-ai-note.kro.kr
+      AUTH_TRUST_HOST: "true"
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       COLLAB_JWT_SECRET: ${COLLAB_JWT_SECRET}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-      NEXT_PUBLIC_COLLAB_URL: ${NEXT_PUBLIC_COLLAB_URL}
+      NEXT_PUBLIC_APP_URL: https://wonryeol-ai-note.kro.kr
+      NEXT_PUBLIC_COLLAB_URL: wss://wonryeol-ai-note.kro.kr/collab
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    depends_on:
+      - collab
 
   collab:
     build:
-      context: ./collab-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: collab-server/Dockerfile
     ports:
       - "127.0.0.1:3101:1234"
     environment:

@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -24,8 +25,10 @@ import {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isOpen, toggle } = useSidebarStore();
+  const { isOpen, width, isResizing, toggle, setWidth, setIsResizing } =
+    useSidebarStore();
   const { notes, createNote, activeWorkspaceId } = useWorkspaceStore();
+  const sidebarRef = useRef<HTMLElement>(null);
 
   const favoriteNotes = notes.filter((n) => n.isFavorite);
 
@@ -36,12 +39,48 @@ export function Sidebar() {
     }
   };
 
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsResizing(true);
+    },
+    [setIsResizing]
+  );
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      setWidth(e.clientX);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isResizing, setWidth, setIsResizing]);
+
   return (
     <aside
+      ref={sidebarRef}
       className={cn(
-        "fixed inset-y-0 left-0 z-30 flex w-60 flex-col border-r bg-sidebar transition-transform duration-200",
-        !isOpen && "-translate-x-full"
+        "fixed inset-y-0 left-0 z-30 flex flex-col border-r bg-sidebar",
+        !isOpen && "-translate-x-full",
+        !isResizing && "transition-transform duration-200"
       )}
+      style={{ width: `${width}px` }}
     >
       <div className="flex h-12 items-center justify-between px-3">
         <span className="text-sm font-semibold text-sidebar-foreground">
@@ -152,6 +191,12 @@ export function Sidebar() {
           active={pathname.startsWith("/settings")}
         />
       </div>
+
+      {/* 리사이즈 핸들 */}
+      <div
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 active:bg-primary/40 transition-colors"
+        onMouseDown={handleMouseDown}
+      />
     </aside>
   );
 }

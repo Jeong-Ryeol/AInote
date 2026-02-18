@@ -12,6 +12,7 @@ interface NoteData {
   id: string;
   title: string;
   icon?: string;
+  content?: Block[];
   yjsState?: string;
 }
 
@@ -70,15 +71,17 @@ export default function NotePage() {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(async () => {
         try {
-          // Content will be saved via Yjs in Phase 3
-          // For now, we just log it
-          console.log("Content changed:", content.length, "blocks");
+          await fetch(`/api/notes/${params.noteId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content }),
+          });
         } catch {
           toast.error("내용 저장에 실패했습니다.");
         }
       }, 2000);
     },
-    []
+    [params.noteId]
   );
 
   if (loading) {
@@ -112,6 +115,7 @@ export default function NotePage() {
       </div>
       <NoteEditor
         noteId={note.id}
+        initialContent={note.content}
         onChange={handleContentChange}
       />
     </div>

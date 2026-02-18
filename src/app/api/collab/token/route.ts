@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { SignJWT } from "jose";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.COLLAB_JWT_SECRET || "dev-secret"
-);
+if (!process.env.COLLAB_JWT_SECRET) {
+  throw new Error("COLLAB_JWT_SECRET environment variable is required");
+}
+const JWT_SECRET = new TextEncoder().encode(process.env.COLLAB_JWT_SECRET);
 
 export async function POST(req: Request) {
   const session = await auth();

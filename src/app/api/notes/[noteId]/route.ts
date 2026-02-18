@@ -62,6 +62,7 @@ export async function PATCH(
     "isArchived",
     "parentId",
     "sortOrder",
+    "content",
   ];
 
   const data: Record<string, unknown> = {};

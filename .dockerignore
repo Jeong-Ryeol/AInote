@@ -3,7 +3,6 @@ node_modules
 .git
 .env
 .env.local
-.env.production
 *.md
 collab-server/node_modules
 collab-server/dist
