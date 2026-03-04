@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/notes?workspaceId=xxx&parentId=xxx
+// GET /api/folders?workspaceId=xxx
 export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -16,7 +16,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "workspaceId required" }, { status: 400 });
   }
 
-  // Verify membership
   const member = await prisma.workspaceMember.findUnique({
     where: {
       workspaceId_userId: { workspaceId, userId: session.user.id },
@@ -27,45 +26,30 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const parentId = searchParams.get("parentId") || null;
-  const archived = searchParams.get("archived") === "true";
-
-  const notes = await prisma.note.findMany({
-    where: {
-      workspaceId,
-      ...(archived ? { isArchived: true } : { parentId, isArchived: false }),
-    },
+  const folders = await prisma.folder.findMany({
+    where: { workspaceId, isArchived: false },
     orderBy: { sortOrder: "asc" },
-    select: {
-      id: true,
-      title: true,
-      icon: true,
-      parentId: true,
-      folderId: true,
-      isFavorite: true,
-      sortOrder: true,
-      updatedAt: true,
-      _count: { select: { children: true } },
+    include: {
+      _count: { select: { notes: true } },
     },
   });
 
-  return NextResponse.json(notes);
+  return NextResponse.json(folders);
 }
 
-// POST /api/notes
+// POST /api/folders
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { workspaceId, parentId, folderId, title } = await req.json();
+  const { workspaceId, name } = await req.json();
 
   if (!workspaceId) {
     return NextResponse.json({ error: "workspaceId required" }, { status: 400 });
   }
 
-  // Verify membership
   const member = await prisma.workspaceMember.findUnique({
     where: {
       workspaceId_userId: { workspaceId, userId: session.user.id },
@@ -76,14 +60,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const note = await prisma.note.create({
+  const folder = await prisma.folder.create({
     data: {
       workspaceId,
-      parentId: parentId || null,
-      folderId: folderId || null,
-      title: title || "제목 없음",
+      name: name || "새 폴더",
+    },
+    include: {
+      _count: { select: { notes: true } },
     },
   });
 
-  return NextResponse.json(note, { status: 201 });
+  return NextResponse.json(folder, { status: 201 });
 }

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import {
   ChevronRight,
   File,
+  FolderClosed,
   MoreHorizontal,
   Plus,
   Trash2,
@@ -17,6 +18,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -27,6 +31,7 @@ export function SidebarNoteTree() {
     activeWorkspaceId,
     fetchWorkspaces,
     fetchNotes,
+    fetchFolders,
     expandedIds,
     toggleExpanded,
     createNote,
@@ -39,10 +44,11 @@ export function SidebarNoteTree() {
   useEffect(() => {
     if (activeWorkspaceId) {
       fetchNotes(activeWorkspaceId);
+      fetchFolders(activeWorkspaceId);
     }
-  }, [activeWorkspaceId, fetchNotes]);
+  }, [activeWorkspaceId, fetchNotes, fetchFolders]);
 
-  const rootNotes = notes.filter((n) => !n.parentId);
+  const rootNotes = notes.filter((n) => !n.parentId && !n.folderId);
 
   return (
     <div className="space-y-0.5">
@@ -73,7 +79,7 @@ interface NoteTreeItemProps {
 function NoteTreeItem({ note, level }: NoteTreeItemProps) {
   const router = useRouter();
   const params = useParams();
-  const { notes, expandedIds, toggleExpanded, createNote, removeNote, updateNote, activeWorkspaceId } =
+  const { notes, folders, expandedIds, toggleExpanded, createNote, removeNote, updateNote, moveNoteToFolder, activeWorkspaceId } =
     useWorkspaceStore();
 
   const isActive = params.noteId === note.id;
@@ -182,6 +188,29 @@ function NoteTreeItem({ note, level }: NoteTreeItemProps) {
                 <Star className="mr-2 h-4 w-4" />
                 {note.isFavorite ? "즐겨찾기 해제" : "즐겨찾기"}
               </DropdownMenuItem>
+              {folders.length > 0 && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <FolderClosed className="mr-2 h-4 w-4" />
+                    폴더로 이동
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-48">
+                    {folders.map((folder) => (
+                      <DropdownMenuItem
+                        key={folder.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          moveNoteToFolder(note.id, folder.id);
+                          toast.success(`"${folder.name}" 폴더로 이동했습니다.`);
+                        }}
+                      >
+                        <FolderClosed className="mr-2 h-4 w-4" />
+                        {folder.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
               <DropdownMenuItem
                 onClick={handleArchive}
                 className="text-destructive"

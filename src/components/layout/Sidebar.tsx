@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { SidebarNoteTree } from "./SidebarNoteTree";
+import { SidebarFolderSection } from "./SidebarFolderSection";
 import {
   ChevronsLeft,
   Home,
@@ -160,6 +161,10 @@ export function Sidebar() {
             <Separator className="my-3" />
           </>
         )}
+
+        <SidebarFolderSection />
+
+        <Separator className="my-3" />
 
         <div className="mb-1 flex items-center justify-between">
           <span className="text-xs font-medium text-muted-foreground">

@@ -90,6 +90,7 @@ model Workspace {
 
   members WorkspaceMember[]
   notes   Note[]
+  folders Folder[]
   tags    Tag[]
   invites WorkspaceInvite[]
 }
@@ -106,12 +107,31 @@ model WorkspaceMember {
   @@unique([workspaceId, userId])
 }
 
+// ─── Folders ────────────────────────────────────────
+
+model Folder {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String   @default("새 폴더")
+  icon        String?
+  sortOrder   Int      @default(0)
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  notes     Note[]
+
+  @@index([workspaceId])
+}
+
 // ─── Notes ───────────────────────────────────────────
 
 model Note {
   id          String   @id @default(cuid())
   workspaceId String
   parentId    String?
+  folderId    String?
   title       String   @default("제목 없음")
   icon        String?
   coverImage  String?
@@ -126,6 +146,7 @@ model Note {
   workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   parent          Note?            @relation("NoteChildren", fields: [parentId], references: [id], onDelete: SetNull)
   children        Note[]           @relation("NoteChildren")
+  folder          Folder?          @relation(fields: [folderId], references: [id], onDelete: SetNull)
   tags            NoteTag[]
   embeddings      NoteEmbedding[]
   aiConversations AIConversation[]

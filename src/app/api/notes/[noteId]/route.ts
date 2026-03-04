@@ -61,6 +61,7 @@ export async function PATCH(
     "isFavorite",
     "isArchived",
     "parentId",
+    "folderId",
     "sortOrder",
     "content",
   ];

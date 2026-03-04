@@ -1,10 +1,19 @@
 import { create } from "zustand";
 
+export interface FolderItem {
+  id: string;
+  name: string;
+  icon?: string | null;
+  sortOrder: number;
+  _count: { notes: number };
+}
+
 interface NoteItem {
   id: string;
   title: string;
   icon?: string | null;
   parentId: string | null;
+  folderId?: string | null;
   isFavorite: boolean;
   sortOrder: number;
   updatedAt: string;
@@ -22,6 +31,7 @@ interface WorkspaceStore {
   workspaces: Workspace[];
   activeWorkspaceId: string | null;
   notes: NoteItem[];
+  folders: FolderItem[];
   expandedIds: Set<string>;
   loading: boolean;
 
@@ -36,13 +46,20 @@ interface WorkspaceStore {
 
   fetchWorkspaces: () => Promise<void>;
   fetchNotes: (workspaceId: string) => Promise<void>;
-  createNote: (parentId?: string | null) => Promise<NoteItem | null>;
+  createNote: (parentId?: string | null, folderId?: string | null) => Promise<NoteItem | null>;
+
+  fetchFolders: (workspaceId: string) => Promise<void>;
+  createFolder: (name?: string) => Promise<FolderItem | null>;
+  updateFolder: (id: string, data: Partial<FolderItem>) => void;
+  removeFolder: (id: string) => void;
+  moveNoteToFolder: (noteId: string, folderId: string | null) => Promise<void>;
 }
 
 export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   workspaces: [],
   activeWorkspaceId: null,
   notes: [],
+  folders: [],
   expandedIds: new Set<string>(),
   loading: false,
 
@@ -74,6 +91,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       if (data.length > 0 && !get().activeWorkspaceId) {
         set({ activeWorkspaceId: data[0].id });
         get().fetchNotes(data[0].id);
+        get().fetchFolders(data[0].id);
       }
     } catch (e) {
       console.error("Failed to fetch workspaces:", e);
@@ -94,7 +112,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
     }
   },
 
-  createNote: async (parentId = null) => {
+  createNote: async (parentId = null, folderId = null) => {
     const { activeWorkspaceId } = get();
     if (!activeWorkspaceId) return null;
 
@@ -105,6 +123,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
         body: JSON.stringify({
           workspaceId: activeWorkspaceId,
           parentId,
+          folderId,
         }),
       });
       if (!res.ok) return null;
@@ -117,6 +136,64 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
     } catch (e) {
       console.error("Failed to create note:", e);
       return null;
+    }
+  },
+
+  fetchFolders: async (workspaceId) => {
+    try {
+      const res = await fetch(`/api/folders?workspaceId=${workspaceId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      set({ folders: data });
+    } catch (e) {
+      console.error("Failed to fetch folders:", e);
+    }
+  },
+
+  createFolder: async (name?: string) => {
+    const { activeWorkspaceId } = get();
+    if (!activeWorkspaceId) return null;
+
+    try {
+      const res = await fetch("/api/folders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId: activeWorkspaceId,
+          name,
+        }),
+      });
+      if (!res.ok) return null;
+      const folder = await res.json();
+      set((s) => ({ folders: [...s.folders, folder] }));
+      return folder;
+    } catch (e) {
+      console.error("Failed to create folder:", e);
+      return null;
+    }
+  },
+
+  updateFolder: (id, data) =>
+    set((s) => ({
+      folders: s.folders.map((f) => (f.id === id ? { ...f, ...data } : f)),
+    })),
+
+  removeFolder: (id) =>
+    set((s) => ({
+      folders: s.folders.filter((f) => f.id !== id),
+      notes: s.notes.map((n) => (n.folderId === id ? { ...n, folderId: null } : n)),
+    })),
+
+  moveNoteToFolder: async (noteId, folderId) => {
+    try {
+      await fetch(`/api/notes/${noteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folderId }),
+      });
+      get().updateNote(noteId, { folderId });
+    } catch (e) {
+      console.error("Failed to move note:", e);
     }
   },
 }));
